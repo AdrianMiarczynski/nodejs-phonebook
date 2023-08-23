@@ -1,19 +1,61 @@
-// const fs = require('fs/promises')
+import { nanoid } from "nanoid";
+import fs from "node:fs/promises";
+import path from "node:path";
 
-const listContacts = async () => {}
+export const contactsPath = path.resolve("./models", "contacts.json");
 
-const getContactById = async (contactId) => {}
+export const listContacts = async () => {
+  try {
+    const response = await fs.readFile(contactsPath);
+    const parseResponse = JSON.parse(response);
+    return parseResponse;
+  } catch (error) {
+    console.log(error);
+  }
+};
+export const getContactById = async (contactId) => {
+  try {
+    const contactsList = await listContacts();
+    const response = contactsList.find((contact) => contact.id === contactId);
+    return response || null;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-const removeContact = async (contactId) => {}
+export const removeContact = async (contactId) => {
+  try {
+    const contactsList = await listContacts();
+    const response = contactsList.findIndex(
+      (contact) => contact.id === contactId
+    );
+    if (response === -1) {
+      return null;
+    }
+    const data = contactsList.splice(response, 1);
+    await fs.writeFile(contactsPath, JSON.stringify(contactsList, null, 1));
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-const addContact = async (body) => {}
+export const addContact = async (body) => {
+  try {
+    const contactsList = await listContacts();
+    const { name, email, phone } = body;
+    const newContact = { id: nanoid(), name, email, phone };
+    contactsList.push(newContact);
+    await fs.writeFile(contactsPath, JSON.stringify(contactsList, null, 1));
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-const updateContact = async (contactId, body) => {}
-
-module.exports = {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-}
+// export const updateContact = async (contactId, body) => {
+//   try {
+//     const contactsList = await listContacts();
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
