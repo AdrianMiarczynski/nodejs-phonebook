@@ -29,12 +29,11 @@ export const removeContact = async (contactId) => {
     const response = contactsList.findIndex(
       (contact) => contact.id === contactId
     );
-    if (response === -1) {
-      return null;
+    if (response !== -1) {
+      contactsList.splice(response, 1)[0];
+      await fs.writeFile(contactsPath, JSON.stringify(contactsList, null, 2));
+      return response;
     }
-    const data = contactsList.splice(response, 1);
-    await fs.writeFile(contactsPath, JSON.stringify(contactsList, null, 1));
-    return data;
   } catch (error) {
     console.log(error);
   }
@@ -52,10 +51,22 @@ export const addContact = async (body) => {
   }
 };
 
-// export const updateContact = async (contactId, body) => {
-//   try {
-//     const contactsList = await listContacts();
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
+export const updateContact = async (contactId, body) => {
+  try {
+    const contactsList = await listContacts();
+    const contactIndex = contactsList.findIndex(
+      (contact) => contact.id === contactId
+    );
+    if (contactIndex === -1) {
+      console.log(`contact Id=${contactId} not found`);
+      return false;
+    }
+    const contact = contactsList[contactIndex];
+    const updateContact = { ...contact, ...body };
+    contactsList[contactIndex] = updateContact;
+    await fs.writeFile(contactsPath, JSON.stringify(contactsList, null, 2));
+    return updateContact;
+  } catch (error) {
+    console.log(error);
+  }
+};
