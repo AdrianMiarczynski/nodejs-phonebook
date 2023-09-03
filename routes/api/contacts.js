@@ -1,5 +1,4 @@
 import express from "express";
-import Joi from "joi";
 
 import {
   addContact,
@@ -7,23 +6,18 @@ import {
   listContacts,
   removeContact,
   updateContact,
+  updateStatusContact,
 } from "../../models/contacts.js";
 
 export const router = express.Router();
 
-const schema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().required(),
-  phone: Joi.string().required(),
-});
-
 router.get("/", async (req, res, next) => {
   try {
-    const contact = await listContacts();
+    const contacts = await listContacts();
     return res.json({
       status: "success",
       code: 200,
-      data: { contact },
+      data: { contacts },
     });
   } catch (err) {
     res.status(500).json(err.message);
@@ -33,11 +27,11 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   const { id } = req.params;
   try {
-    const contacts = await getContactById(id);
+    const contact = await getContactById(id);
     return res.json({
       status: "success",
       code: 200,
-      data: { contacts },
+      data: { contact },
     });
   } catch (err) {
     res.status(404).json({ message: "Not found" });
@@ -47,10 +41,6 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   const data = req.body;
   try {
-    const { error } = schema.validate(data);
-    if (error) {
-      return res.status(400).json(error.message);
-    }
     const contact = await addContact(data);
     res.json({
       status: "success",
@@ -87,15 +77,30 @@ router.put("/:id", async (req, res, next) => {
   const { id } = req.params;
   const body = req.body;
   try {
-    const { error } = schema.validate(body);
-    if (error) {
-      return res.status(400).json(error.message, "missing fields");
-    }
     const contactUpdate = await updateContact(id, body);
     res.json({
       status: "success",
       code: 200,
       data: { contactUpdate },
+    });
+  } catch (err) {
+    req.status(404).json(err, "Not found");
+  }
+});
+router.patch("/:id", async (req, res, next) => {
+  const { id } = req.params;
+  const body = req.body;
+  const favorite = req.body.favorite;
+
+  if (!("favorite" in body)) {
+    return res.status(400).json({ message: "missing field favorite" });
+  }
+  try {
+    const contact = await updateStatusContact(id, favorite);
+    return res.status(200).json({
+      status: "success",
+      code: 200,
+      data: { contact },
     });
   } catch (err) {
     req.status(404).json(err, "Not found");
