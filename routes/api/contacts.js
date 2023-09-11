@@ -9,11 +9,14 @@ import {
   updateStatusContact,
 } from "../../models/contacts.js";
 
+import { auth } from "./users.js";
+
 export const router = express.Router();
 
-router.get("/", async (req, res, next) => {
+router.get("/", auth, async (req, res, next) => {
   try {
-    const contacts = await listContacts();
+    const { id: userId } = req.user;
+    const contacts = await listContacts(userId);
     return res.json({
       status: "success",
       code: 200,
@@ -24,10 +27,11 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
-  const { id } = req.params;
+router.get("/:id", auth, async (req, res, next) => {
+  const { id: userId } = req.user;
+  const { id: contactId } = req.params;
   try {
-    const contact = await getContactById(id);
+    const contact = await getContactById(userId, contactId);
     return res.json({
       status: "success",
       code: 200,
@@ -38,10 +42,11 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", auth, async (req, res, next) => {
   const data = req.body;
+  const { id: userId } = req.user;
   try {
-    const contact = await addContact(data);
+    const contact = await addContact(data, userId);
     res.json({
       status: "success",
       code: 201,
@@ -53,9 +58,10 @@ router.post("/", async (req, res, next) => {
 });
 
 router.delete("/:id", async (req, res, next) => {
-  const { id } = req.params;
+  const { id: contactId } = req.params;
+  const userId = req.user;
   try {
-    const isRemoved = await removeContact(id);
+    const isRemoved = await removeContact(contactId, userId);
     if (!isRemoved) {
       res.json({
         status: "not found",
@@ -74,10 +80,11 @@ router.delete("/:id", async (req, res, next) => {
 });
 
 router.put("/:id", async (req, res, next) => {
-  const { id } = req.params;
+  const { id: contactId } = req.params;
+  const userId = req.user;
   const body = req.body;
   try {
-    const contactUpdate = await updateContact(id, body);
+    const contactUpdate = await updateContact(contactId, body, userId);
     res.json({
       status: "success",
       code: 200,
@@ -88,7 +95,8 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 router.patch("/:id", async (req, res, next) => {
-  const { id } = req.params;
+  const { id: contactId } = req.params;
+  const userId = req.user;
   const body = req.body;
   const favorite = req.body.favorite;
 
@@ -96,7 +104,7 @@ router.patch("/:id", async (req, res, next) => {
     return res.status(400).json({ message: "missing field favorite" });
   }
   try {
-    const contact = await updateStatusContact(id, favorite);
+    const contact = await updateStatusContact(contactId, favorite, userId);
     return res.status(200).json({
       status: "success",
       code: 200,
