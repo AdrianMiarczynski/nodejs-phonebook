@@ -52,6 +52,28 @@ export const auth = async (req, res, next) => {
     });
   }
 };
+userRouter.get("/current", auth, async (req, res, next) => {
+  const { id } = req.user;
+  try {
+    const user = await getUserById(id);
+    if (!user) {
+      return res.status(404).json(`User not found!!!`);
+    }
+    const { email, subscription } = user;
+
+    return res.status(200).json({
+      status: "success",
+      code: 200,
+      data: { email, subscription },
+    });
+  } catch (err) {
+    return res.status(500).json({
+      status: "error",
+      code: 500,
+      message: `${err}`,
+    });
+  }
+});
 
 userRouter.get("/", async (req, res, next) => {
   try {
@@ -134,28 +156,5 @@ userRouter.post("/logout", auth, async (req, res, next) => {
     return res.status(204).json({ message: `logout` });
   } catch (err) {
     return res.status(500).json({ message: "Not authorized" });
-  }
-});
-
-userRouter.get("/current", auth, async (req, res, next) => {
-  const { id } = req.user;
-  try {
-    const user = await getUserById(id);
-    if (!user) {
-      return res.status(404).json(`User not found!!!`);
-    }
-    const { email, subscription } = user;
-
-    return res.status(200).json({
-      status: "success",
-      code: 200,
-      data: { email, subscription },
-    });
-  } catch (err) {
-    return res.status(500).json({
-      status: "error",
-      code: 500,
-      message: `${err}`,
-    });
   }
 });
