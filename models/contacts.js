@@ -1,19 +1,61 @@
-// const fs = require('fs/promises')
+import Contact from "../service/schema/contact.js";
 
-const listContacts = async () => {}
+export const listContacts = async (userId) => {
+  try {
+    return await Contact.find({ owner: userId });
+  } catch (error) {
+    throw error;
+  }
+};
+export const getContactById = async (userId, contactId) => {
+  try {
+    return await Contact.findOne({ _id: contactId, owner: userId });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-const getContactById = async (contactId) => {}
+export const removeContact = async (contactId, userId) => {
+  try {
+    return await Contact.findByIdAndRemove({ _id: contactId, owner: userId });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-const removeContact = async (contactId) => {}
+export const addContact = async (body, userId) => {
+  try {
+    const data = {
+      ...body,
+      owner: userId,
+    };
+    return await Contact.create(data);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-const addContact = async (body) => {}
-
-const updateContact = async (contactId, body) => {}
-
-module.exports = {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-}
+export const updateContact = async (contactId, body, userId) => {
+  try {
+    return await Contact.findByIdAndUpdate(
+      { _id: contactId, owner: userId },
+      body,
+      {
+        new: true,
+      }
+    );
+  } catch (error) {
+    console.log(error);
+  }
+};
+export const updateStatusContact = async (contactId, favorite, userId) => {
+  try {
+    return await Contact.findByIdAndUpdate(
+      { _id: contactId, owner: userId },
+      { $set: { favorite } },
+      { new: true }
+    );
+  } catch (error) {
+    console.log(error);
+  }
+};
