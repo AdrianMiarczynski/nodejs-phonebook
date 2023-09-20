@@ -3,11 +3,14 @@ import {
   addUser,
   getUserById,
   loginUser,
+  pathAvatar,
+  // updateUser,
   userList,
 } from "../../models/users.js";
 import passport from "../../config/config-passport.js";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
+import { upload } from "../../config/multer.js";
 
 export const userRouter = express.Router();
 const secret = process.env.SECRET;
@@ -156,5 +159,40 @@ userRouter.post("/logout", auth, async (req, res, next) => {
     return res.status(204).json({ message: `logout` });
   } catch (err) {
     return res.status(500).json({ message: "Not authorized" });
+  }
+});
+// userRouter.patch("/", auth, async (req, res, next) => {
+//   const { id } = req.user;
+//   const { subscription } = req.body;
+//   console.log(id, subscription)
+//   try {
+
+//     const update = await updateUser(id, subscription);
+
+//     return res.status(200).json({
+//       status: "success",
+//       code: 200,
+//       data: { update },
+//     });
+//   } catch (err) {
+//     res.status(500).json(`${err}`);
+//   }
+// });
+
+userRouter.patch("/avatars", auth, upload.single("avatar"), async (req, res, next) => {
+  const { id } = req.user;
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json(`Missing File !!!`)
+  }
+  try {
+    const avatar = await pathAvatar(id, file);
+    return res.status(200).json({
+      status: 'success',
+      code: 200,
+      data:{avatar}
+    });
+  } catch (err) {
+    throw err;
   }
 });
