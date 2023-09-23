@@ -6,6 +6,8 @@ import {
   pathAvatar,
   // updateUser,
   userList,
+  verificationEmail,
+  verificationUser,
 } from "../../models/users.js";
 import passport from "../../config/config-passport.js";
 import jwt from "jsonwebtoken";
@@ -179,20 +181,64 @@ userRouter.post("/logout", auth, async (req, res, next) => {
 //   }
 // });
 
-userRouter.patch("/avatars", auth, upload.single("avatar"), async (req, res, next) => {
-  const { id } = req.user;
-  const file = req.file;
-  if (!file) {
-    return res.status(400).json(`Missing File !!!`)
+userRouter.patch(
+  "/avatars",
+  auth,
+  upload.single("avatar"),
+  async (req, res, next) => {
+    const { id } = req.user;
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json(`Missing File !!!`);
+    }
+    try {
+      const avatar = await pathAvatar(id, file);
+      return res.status(200).json({
+        status: "success",
+        code: 200,
+        data: { avatar },
+      });
+    } catch (err) {
+      throw err;
+    }
   }
+);
+
+userRouter.get("/verify/:verificationToken", async (req, res, next) => {
+  const { verificationToken } = req.params;
   try {
-    const avatar = await pathAvatar(id, file);
+    const user = await verificationUser(verificationToken);
+    if (!user) {
+      return req.json({
+        message: `User not found`,
+      });
+    }
+
     return res.status(200).json({
-      status: 'success',
+      message: `Verification success`,
       code: 200,
-      data:{avatar}
+      data: { user },
     });
   } catch (err) {
-    throw err;
+    req.status(500).json(err);
+  }
+});
+
+
+userRouter.post("/verify/", async (req, res, next) => {
+  const { email, verificationToken } = req.body;
+  if (!email) {
+    res.status(400).json({ message: "missing require field" });
+  }
+  try {
+    const user = await verificationEmail(email, verificationToken);
+    return req.status(200).json({
+      status: "success",
+      message: `Verification email sent`,
+      code: 200,
+      data: { user },
+    });
+  } catch (err) {
+    res.status(400).json({ message: `Verification has already been passed` });
   }
 });

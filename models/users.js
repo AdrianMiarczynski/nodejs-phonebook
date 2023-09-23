@@ -3,6 +3,11 @@ import User from "../service/schema/user.js";
 import bcrypt from "bcrypt";
 import gravatar from "gravatar";
 import Jimp from "jimp";
+import { nanoid } from "nanoid";
+import "dotenv/config";
+import sgMail from "@sendgrid/mail";
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 export const userList = async () => {
   try {
@@ -19,6 +24,46 @@ export const getUserById = async (id) => {
     throw err;
   }
 };
+export const verificationMgs = (email, verificationToken) => {
+  return {
+    to: email, // Change to your recipient
+    from: "adrian331144@gmail.com", // Change to your verified sender
+    subject: "Verify your email",
+    text: "Verify your email in link bellow",
+    html: `<strong><a href="http://localhost:3000/api/users/verify/${verificationToken}">Verify email</a></strong>`,
+  };
+};
+export const verificationEmail = async (email) => {
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw new Error({ message: `User not found` });
+    }
+    const { verificationToken, verify } = user;
+    if (verify) {
+      throw new Error({ message: `Verification has already been passed` });
+    }
+    await sgMail.send(verificationMgs(email, verificationToken));
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const verificationUser = async (verificationToken) => {
+  try {
+    // const user = await User.find();
+    // const findUser = user.find(user => user.verificationToken === verificationToken)
+    const user = await User.findOne({ verificationToken });
+    if (!user) {
+      throw new Error();
+    }
+    (user.verify = true), (user.verificationToken = null);
+    return user;
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+};
 export const addUser = async (body) => {
   const { email, password } = body;
   const users = await User.find();
@@ -30,13 +75,21 @@ export const addUser = async (body) => {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
     const userAvatar = gravatar.url(email, { s: "250" });
-    const user = { ...body, password: hashedPassword, avatarURL: userAvatar };
+    const verificationToken = nanoid();
+    const user = {
+      ...body,
+      password: hashedPassword,
+      avatarURL: userAvatar,
+      verificationToken,
+    };
     await User.create(user);
+    await sgMail.send(verificationMgs(email, verificationToken));
     return user;
   } catch (err) {
     throw err;
   }
 };
+
 export const loginUser = async (body) => {
   const { email, password } = body;
   const users = await User.find();
