@@ -108,21 +108,22 @@ export const loginUser = async (body) => {
     throw new Error();
   }
 };
-// export const updateUser = async (userId, subscription) => {
-//   const available = User.schema.path("subscription").enumValues;
-//   if (!available.includes(subscription)) {
-//     throw new Error();
-//   }
-//   try {
-//     return await User.findByIdAndUpdate(
-//       { _id: userId },
-//       { $set: { subscription: subscription } },
-//       { new: true,select:'email subscription' }
-//     );
-//   } catch (err) {
-//     throw new Error();
-//   }
-// };
+export const updateUser = async (userId, subscription) => {
+  const available = User.schema.path("subscription").enumValues;
+  if (!available.includes(subscription)) {
+    throw new Error();
+  }
+  try {
+    return await User.findByIdAndUpdate(
+      { _id: userId },
+      { $set: { subscription: subscription } },
+      { new: true, select: "email subscription" }
+    );
+  } catch (err) {
+    throw new Error();
+  }
+};
+
 export const pathAvatar = async (id, file) => {
   try {
     const localAvatar = `public/avatars/avatar_${id}.jpg`;

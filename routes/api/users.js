@@ -4,7 +4,7 @@ import {
   getUserById,
   loginUser,
   pathAvatar,
-  // updateUser,
+  updateUser,
   userList,
   verificationEmail,
   verificationUser,
@@ -163,23 +163,22 @@ userRouter.post("/logout", auth, async (req, res, next) => {
     return res.status(500).json({ message: "Not authorized" });
   }
 });
-// userRouter.patch("/", auth, async (req, res, next) => {
-//   const { id } = req.user;
-//   const { subscription } = req.body;
-//   console.log(id, subscription)
-//   try {
+userRouter.patch("/", auth, async (req, res, next) => {
+  const { id } = req.user;
+  const { subscription } = req.body;
+  console.log(id, subscription);
+  try {
+    const update = await updateUser(id, subscription);
 
-//     const update = await updateUser(id, subscription);
-
-//     return res.status(200).json({
-//       status: "success",
-//       code: 200,
-//       data: { update },
-//     });
-//   } catch (err) {
-//     res.status(500).json(`${err}`);
-//   }
-// });
+    return res.status(200).json({
+      status: "success",
+      code: 200,
+      data: { update },
+    });
+  } catch (err) {
+    res.status(500).json(`${err}`);
+  }
+});
 
 userRouter.patch(
   "/avatars",
@@ -223,7 +222,6 @@ userRouter.get("/verify/:verificationToken", async (req, res, next) => {
     req.status(500).json(err);
   }
 });
-
 
 userRouter.post("/verify/", async (req, res, next) => {
   const { email, verificationToken } = req.body;
