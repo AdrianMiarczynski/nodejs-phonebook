@@ -127,6 +127,9 @@ userRouter.post("/login", async (req, res, next) => {
     if (!user) {
       return res.status(400).json(`Email or password is wrong`);
     }
+    if (!user.verify) {
+      return res.status(400).json(`Verification is essential`);
+    }
     const payload = {
       id: user.id,
       username: user.email,
@@ -208,7 +211,7 @@ userRouter.get("/verify/:verificationToken", async (req, res, next) => {
   try {
     const user = await verificationUser(verificationToken);
     if (!user) {
-      return req.json({
+      return res.json({
         message: `User not found`,
       });
     }
@@ -219,7 +222,7 @@ userRouter.get("/verify/:verificationToken", async (req, res, next) => {
       data: { user },
     });
   } catch (err) {
-    req.status(500).json(err);
+    res.status(500).json(err);
   }
 });
 
@@ -230,7 +233,7 @@ userRouter.post("/verify/", async (req, res, next) => {
   }
   try {
     const user = await verificationEmail(email, verificationToken);
-    return req.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: `Verification email sent`,
       code: 200,

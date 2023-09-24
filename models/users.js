@@ -57,7 +57,9 @@ export const verificationUser = async (verificationToken) => {
     if (!user) {
       throw new Error();
     }
-    (user.verify = true), (user.verificationToken = null);
+    user.verify = true;
+    await user.save();
+    user.verificationToken = null;
     return user;
   } catch (err) {
     console.log(err);
