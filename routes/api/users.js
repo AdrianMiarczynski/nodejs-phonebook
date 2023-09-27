@@ -4,8 +4,10 @@ import {
   getUserById,
   loginUser,
   pathAvatar,
-  // updateUser,
+  updateUser,
   userList,
+  verificationEmail,
+  verificationUser,
 } from "../../models/users.js";
 import passport from "../../config/config-passport.js";
 import jwt from "jsonwebtoken";
@@ -125,6 +127,9 @@ userRouter.post("/login", async (req, res, next) => {
     if (!user) {
       return res.status(400).json(`Email or password is wrong`);
     }
+    if (!user.verify) {
+      return res.status(400).json(`Verification is essential`);
+    }
     const payload = {
       id: user.id,
       username: user.email,
@@ -161,38 +166,80 @@ userRouter.post("/logout", auth, async (req, res, next) => {
     return res.status(500).json({ message: "Not authorized" });
   }
 });
-// userRouter.patch("/", auth, async (req, res, next) => {
-//   const { id } = req.user;
-//   const { subscription } = req.body;
-//   console.log(id, subscription)
-//   try {
-
-//     const update = await updateUser(id, subscription);
-
-//     return res.status(200).json({
-//       status: "success",
-//       code: 200,
-//       data: { update },
-//     });
-//   } catch (err) {
-//     res.status(500).json(`${err}`);
-//   }
-// });
-
-userRouter.patch("/avatars", auth, upload.single("avatar"), async (req, res, next) => {
+userRouter.patch("/", auth, async (req, res, next) => {
   const { id } = req.user;
-  const file = req.file;
-  if (!file) {
-    return res.status(400).json(`Missing File !!!`)
-  }
+  const { subscription } = req.body;
+  console.log(id, subscription);
   try {
-    const avatar = await pathAvatar(id, file);
+    const update = await updateUser(id, subscription);
+
     return res.status(200).json({
-      status: 'success',
+      status: "success",
       code: 200,
-      data:{avatar}
+      data: { update },
     });
   } catch (err) {
-    throw err;
+    res.status(500).json(`${err}`);
+  }
+});
+
+userRouter.patch(
+  "/avatars",
+  auth,
+  upload.single("avatar"),
+  async (req, res, next) => {
+    const { id } = req.user;
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json(`Missing File !!!`);
+    }
+    try {
+      const avatar = await pathAvatar(id, file);
+      return res.status(200).json({
+        status: "success",
+        code: 200,
+        data: { avatar },
+      });
+    } catch (err) {
+      throw err;
+    }
+  }
+);
+
+userRouter.get("/verify/:verificationToken", async (req, res, next) => {
+  const { verificationToken } = req.params;
+  try {
+    const user = await verificationUser(verificationToken);
+    if (!user) {
+      return res.json({
+        message: `User not found`,
+      });
+    }
+
+    return res.status(200).json({
+      message: `Verification success`,
+      code: 200,
+      data: { user },
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+userRouter.post("/verify/", async (req, res, next) => {
+  const { email, verificationToken } = req.body;
+  if (!email) {
+    res.status(400).json({ message: "missing require field" });
+  }
+  try {
+    const user = await verificationEmail(email, verificationToken);
+    return res.status(200).json({
+      status: "success",
+      message: `Verification email sent`,
+      code: 200,
+      data: { user },
+    });
+  } catch (err) {
+    res.status(400).json({ message: `Verification has already been passed` });
   }
 });
